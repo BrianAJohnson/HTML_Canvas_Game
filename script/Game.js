@@ -344,7 +344,7 @@ class Map {
     this.spriteSheet = new Image()
     this.spriteSheet.src = './img/tiles2.png'
     this.background = new Image()
-    this.background.src = './img/bg.png'
+    this.background.src = './img/BG.png'
 
     this.render = function (buffer, pos) {
       buffer.width = 2560
