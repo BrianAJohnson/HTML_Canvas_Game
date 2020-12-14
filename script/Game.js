@@ -406,6 +406,11 @@ class Map {
     this.tileArray = this.getTileArray()
     this.spriteSheet = new Image()
     this.spriteSheet.src = './img/tiles2.png'
+<<<<<<< HEAD
+=======
+    this.background = new Image()
+    this.background.src = './img/BG.png'
+>>>>>>> 85c72160184d5a577dea2b5a21f627440de7b1b2
 
     this.render = function (buffer, pos) {
       let tile = 0
