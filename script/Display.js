@@ -84,7 +84,7 @@ class Animation {
     this.count = 0
     this.animation = 0
     this.spriteSheet = new Image()
-    this.spriteSheet.src = './img/SpriteSheet2.png'
+    this.spriteSheet.src = './img/spriteSheet2.png'
     this.scale = 0.8
     this.spriteWidth = 75
     this.spriteHeight = 128

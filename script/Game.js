@@ -407,9 +407,6 @@ class Map {
     this.spriteSheet = new Image()
     this.spriteSheet.src = './img/tiles2.png'
 
-    this.background = new Image()
-    this.background.src = './img/BG.png'
-
     this.render = function (buffer, pos) {
       let tile = 0
       for (let i = 0; i < this.tileMap.length; i++) {
