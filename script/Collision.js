@@ -43,7 +43,12 @@ class Collision {
       contact_normal = rect.vel.x < 0 ? { x: 1, y: 0 } : { x: -1, y: 0 }
     }
 
-    return { hit: true, cp: contact_point, cn: contact_normal }
+    return {
+      hit: true,
+      cp: contact_point,
+      cn: contact_normal,
+      passable: obj.passable,
+    }
   }
 
   getNear = (rect, obj) => {

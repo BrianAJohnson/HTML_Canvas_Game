@@ -3,14 +3,15 @@ class Controller {
     this.left = false
     this.right = false
     this.jump = false
-    this.standing = false
+    this.shoot = false
+    this.standing = true
 
     this.keys = (e) => {
       let code = e.keyCode
       let keydown = e.type == 'keydown' ? true : false
       switch (code) {
         case 32:
-          this.jump = keydown
+          this.shoot = keydown
           break
         case 37:
           this.left = keydown

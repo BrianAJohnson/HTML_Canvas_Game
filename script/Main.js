@@ -12,6 +12,9 @@ function init() {
     if (controller.jump) {
       game.world.player.jump()
     }
+    if (controller.shoot) {
+      game.world.player.shooting()
+    }
     if (controller.standing) {
       game.world.player.standing()
     }

@@ -7,11 +7,11 @@ class Game {
       background_color: 'black',
       friction: 0.75,
       gravity: 1.6,
-      player: new Player(50, 128, 32, 32, 'red'),
+      player: new Player(128, 128, 32, 64, 'red'),
       collision: new Collision(),
 
-      width: 1280, //1280,
-      height: 932, //720,
+      width: 1280, //1280, //1280,
+      height: 720, //720,
       map: new Map(WIDTH, HEIGHT),
       color: 'blue',
 
@@ -26,12 +26,21 @@ class Game {
         this.world.player.vel.x *= 0.7
         this.world.player.vel.y += this.world.gravity
         let enemies = this.world.map.enemies
+        let bullets = this.world.player.bullets
         for (let i = 0; i < enemies.length; i++) {
           enemies[i].vel.y += this.world.gravity
 
           enemies[i].playerCollision(this.world.player)
           this.world.checkTileCollision(enemies[i])
           enemies[i].update()
+          for (let j = 0; j < bullets.length; j++) {
+            let dx = enemies[i].x - bullets[j].x
+            let dy = enemies[i].y - bullets[j].y
+            if (Math.sqrt(dx * dx + dy * dy) <= 35) {
+              enemies.splice(i, 1)
+              this.world.player.bullets.splice(j, 1)
+            }
+          }
         }
 
         this.world.checkTileCollision(this.world.player)
@@ -143,8 +152,11 @@ class Rectangle {
 }
 
 class Enemy extends Rectangle {
-  constructor(x, y, width, height, color) {
-    super(x, y, width, height, color)
+  constructor(x, y, width, height, type) {
+    super(x, y, width, height)
+    this.type = type
+    this.spriteSheet = new Image()
+    this.spriteSheet.src = './img/enemies.png'
     this.vel = { x: this.random_Velocity(6, 4), y: 0 }
   }
   resolve(col) {
@@ -175,6 +187,20 @@ class Enemy extends Rectangle {
     this.x += this.vel.x
     this.y += this.vel.y
   }
+
+  render(buffer) {
+    buffer.drawImage(
+      this.spriteSheet,
+      this.type * 85,
+      0,
+      85,
+      113,
+      this.x - this.width / 2 - 5,
+      this.y - this.height / 2,
+      42,
+      56,
+    )
+  }
   playerCollision(player) {
     if (player.hit) return
     let half_width = this.width / 2
@@ -193,7 +219,6 @@ class Enemy extends Rectangle {
       player.hitSound.play()
       if (player.vel.x < 1 && player.vel.x > -1) {
         player.vel.x = this.vel.x * 8
-        console.log(player.vel.x)
       } else {
         player.vel.x *= -5
       }
@@ -219,6 +244,9 @@ class Player extends Rectangle {
     this.animation = new Animation()
     this.jumpSound = new Sound('./sound/jumpSound.mp3')
     this.hitSound = new Sound('./sound/landingSound.mp3')
+    this.bullets = []
+    this.shotDelay = 6
+    this.shotCounter = 0
 
     this.left = () => {
       this.vel.x -= 3
@@ -229,33 +257,27 @@ class Player extends Rectangle {
       this.animation.right()
     }
     this.jump = () => {
-      this.animation.jumping()
+      //this.animation.jumping()
       if (this.jumping == false) {
         this.jumpSound.play()
         this.vel.y = -23
         this.jumping = true
       }
     }
+    this.shooting = () => {
+      if (this.shotCounter == 0) {
+        this.shoot()
+        this.shotCounter++
+      }
+      if (this.shotCounter >= this.shotDelay) this.shotCounter = 0
+    }
     this.standing = () => {
       this.animation.standing()
     }
   }
 
-  update() {
-    this.x += this.vel.x
-    this.y += this.vel.y
-    if (this.hit) {
-      this.hitCounter++
-      if (this.hitCounter == this.hitTime) {
-        this.hit = false
-        this.hitCounter = 0
-      }
-    }
-    this.animation.update()
-  }
-
   resolve(col) {
-    if (col.hit == true && col.cn != undefined) {
+    if (col.hit == true && col.cn != undefined && !col.passable) {
       // moving - left
       if (col.cn.x == 1) {
         this.vel.x = 0
@@ -280,12 +302,53 @@ class Player extends Rectangle {
     }
   }
 
+  shoot() {
+    this.bullets.push({
+      x: this.x,
+      y: this.y,
+      vel: this.vel.x > 0 ? 20 : -20,
+      update: function () {
+        this.x = this.x + this.vel
+      },
+      render: function (buffer) {
+        buffer.fillStyle = 'white'
+        buffer.fillRect(this.x - 5, this.y - 5, 10, 10)
+      },
+    })
+  }
+
+  update() {
+    this.x += this.vel.x
+    this.y += this.vel.y
+    if (this.shotCounter > 0) {
+      this.shotCounter++
+      if (this.shotCounter >= this.shotDelay) this.shotCounter = 0
+    }
+    if (this.hit) {
+      this.hitCounter++
+      if (this.hitCounter == this.hitTime) {
+        this.hit = false
+        this.hitCounter = 0
+      }
+    }
+    this.animation.update()
+    for (let i = 0; i < this.bullets.length; i++) {
+      this.bullets[i].update()
+      if (this.bullets[i].x > 3000) {
+        this.bullets.splice(i, 1)
+      }
+    }
+  }
+
   render(buffer) {
+    for (let i = 0; i < this.bullets.length; i++) {
+      this.bullets[i].render(buffer)
+    }
     if (this.hit && this.hitCounter % 4 == 0) return
     this.animation.drawAnimationFrame(
       buffer,
-      this.x - this.width / 2,
-      this.y - this.height * 0.9,
+      this.x - this.width / 2 - 12,
+      this.y - this.height - 10,
     )
   }
 }
@@ -321,10 +384,10 @@ class Map {
         [8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8],
         [8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8],
         [8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8],
-        [8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,0,0,0,0,0,0,0,0,0,0,8,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8],
+        [8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,9,0,0,g,0,0,7,0,9,0,0,0,0,0,0,0,0,0,8,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8],
         [8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,2,2,2,2,2,2,0,0,0,0,0,0,0,0,0,0,8,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8],
-        [8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8],
-        [8,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,g,7,0,0,0,0,0,0,0,0,0,0,0,1,2,3,0,0,0,0,0,0,0,0,0,0,1,2,2,2,2,2,3,0,0,0,0,0,0,0,0,0,0,8],
+        [8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8],
+        [8,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,0,0,0,0,0,0,0,0,0,0,1,2,3,0,0,0,0,0,0,0,0,0,0,1,2,2,2,2,2,3,0,0,0,0,0,0,0,0,0,0,8],
         [8,0,0,0,0,0,0,0,0,0,0,0,0,1,2,2,2,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,2,2,2,2,5,5,5,5,5,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8],
         [8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8],
         [8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,8,0,0,0,0,0,0,0,0,0,0,0,0,0,1,2,2,2,2,2,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8],
@@ -334,7 +397,7 @@ class Map {
         [8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,8,0,0,0,0,0,0,1,2,2,2,2,2,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8],
         [8,7,0,0,0,0,0,0,0,0,0,0,0,0,1,2,3,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,5,5,8,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8],
         [8,5,6,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,r,0,0,0,0,0,4,5,5,5,8,8,8,8,8,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8],
-        [8,8,8,6,0,0,7,0,0,0,0,b,0,0,0,0,0,0,0,0,0,4,5,5,6,0,0,0,0,4,5,5,8,8,8,8,8,8,8,8,8,8,8,6,0,0,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,5,5,6,0,0,0,0,4,5,5,8,8,8,8,8,8,8,8],
+        [8,8,8,6,0,0,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,5,5,6,0,0,0,0,4,5,5,8,8,8,8,8,8,8,8,8,8,8,6,0,0,7,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,5,5,6,0,0,0,0,4,5,5,8,8,8,8,8,8,8,8],
         [8,8,8,8,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,8,8,8,8,5,5,5,5,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,8,8,8,8,5,5,5,5,8,8,8,8,8,8,8,8,8,8,8],
         [8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
         [8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8,8],
@@ -343,23 +406,8 @@ class Map {
     this.tileArray = this.getTileArray()
     this.spriteSheet = new Image()
     this.spriteSheet.src = './img/tiles2.png'
-    this.background = new Image()
-    this.background.src = './img/bg.png'
 
     this.render = function (buffer, pos) {
-      buffer.width = 2560
-      buffer.drawImage(
-        this.background,
-        0,
-        0,
-        this.background.width,
-        this.background.height,
-        0,
-        0,
-        this.width,
-        this.height,
-      )
-
       let tile = 0
       for (let i = 0; i < this.tileMap.length; i++) {
         for (let j = 0; j < this.tileMap[i].length; j++) {
@@ -392,7 +440,7 @@ class Map {
               tile = { x: 32, y: 64, size: 32 }
               break
             case 9:
-              tile = { x: 64, y: 64, size: 32 }
+              tile = { x: -32, y: -32, size: 32 }
               break
           }
           // prettier-ignore
@@ -418,10 +466,10 @@ class Map {
       let tempRow = []
       for (let j = 0; j < this.tileMap[i].length; j++) {
         // prettier-ignore
-        tempRow.push({x: j*32, y: i*32, width:32, height:32, solid: (this.tileMap[i][j] !== 7 &&this.tileMap[i][j] > 0  ) ? true:false})
+        tempRow.push({x: j*32, y: i*32, width:32, height:32, solid: (this.tileMap[i][j] !== 7 &&this.tileMap[i][j] > 0  ) ? true:false,passable: (this.tileMap[i][j] == 9) ? true:false})
         if (typeof this.tileMap[i][j] == 'object') {
           this.enemies.push(
-            new Enemy(j * 32, i * 32, 16, 32, this.tileMap[i][j].color),
+            new Enemy(j * 32, i * 32, 32, 64, Math.floor(Math.random() * 3)),
           )
         }
       }
