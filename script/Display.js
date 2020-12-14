@@ -3,7 +3,7 @@ class Display {
     this.buffer = document.createElement('CANVAS').getContext('2d')
     this.context = canvas.getContext('2d')
     this.background = new Image()
-    this.background.src = './img/bg.png'
+    this.background.src = './img/BG.png'
 
     this.fill = function (color) {
       this.buffer.fillStyle = color
