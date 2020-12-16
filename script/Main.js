@@ -52,7 +52,7 @@ function init() {
 
   display.context.canvas.width = game.world.width
   display.context.canvas.height = game.world.height
-  display.buffer.canvas.width = 2560 //game.world.width
+  display.buffer.canvas.width = game.world.map.width
   display.buffer.canvas.height = game.world.height
 
   resize()

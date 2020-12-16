@@ -65,10 +65,6 @@ class Display {
         this.context.canvas.width = height / height_width_ratio
       }
       this.context.imageSmoothingEnabled = false
-      console.log(
-        height_width_ratio,
-        this.context.canvas.height / this.context.canvas.width,
-      )
     }
 
     this.getSize = function () {
