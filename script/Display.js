@@ -78,17 +78,17 @@ class Display {
 }
 
 class Animation {
-  constructor() {
+  constructor(src, width, height, pos, numFrames, delay) {
     this.frame = 0
-    this.delay = 0
+    this.delay = delay
     this.count = 0
-    this.animation = 0
+    this.position = pos
     this.spriteSheet = new Image()
-    this.spriteSheet.src = './img/spriteSheet2.png'
+    this.spriteSheet.src = src
     this.scale = 0.8
-    this.spriteWidth = 75
-    this.spriteHeight = 128
-    this.numFrames = 1 // this.spriteSheet.width / this.spriteWidth;
+    this.spriteWidth = width
+    this.spriteHeight = height
+    this.numFrames = numFrames // this.spriteSheet.width / this.spriteWidth;
   }
 
   update() {
@@ -102,28 +102,28 @@ class Animation {
 
   right() {
     this.spriteWidth = 75
-    this.animation = 0
+    this.position = 0
     this.numFrames = 8
     this.delay = 2
   }
 
   left() {
     this.spriteWidth = 75
-    this.animation = 1
+    this.position = 1
     this.numFrames = 8
     this.delay = 2
   }
 
   jumping() {
     this.spriteWidth = 66
-    this.animation = 2
+    this.position = 2
     this.numFrames = 8
     this.delay = 1
   }
 
   standing() {
     this.spriteWidth = 66
-    this.animation = 2
+    this.position = 2
     this.numFrames = 8
     this.delay = 3
   }
@@ -132,7 +132,7 @@ class Animation {
     canvas.drawImage(
       this.spriteSheet,
       this.frame * this.spriteWidth,
-      this.animation * this.spriteHeight,
+      this.position * this.spriteHeight,
       this.spriteWidth,
       this.spriteHeight,
       Math.floor(x),
